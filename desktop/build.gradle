@@ -1,0 +1,36 @@
+eclipse.project.name = appName + '-desktop'
+sourceSets.main.java.srcDirs = ['src/']
+
+configurations {
+    consumer
+}
+
+artifacts {
+    consumer(file('proguard.txt'))
+}
+
+// Expose consumer ProGuard rules so that fat-JAR / ProGuard users
+// automatically pick up the required -keep rules for the reflectively
+// loaded DesktopGDXDialogs implementation classes.
+task copyProguardRules(type: Copy) {
+    from 'proguard.txt'
+    into "$buildDir/resources/main/META-INF/proguard"
+}
+processResources.dependsOn copyProguardRules
+
+dependencies {
+    implementation project(':core')
+    implementation fileTree(dir: 'libs', include: '*.jar')
+}
+
+task runTest(type: JavaExec) {
+    dependsOn classes
+    mainClass = 'com.mrz07.gdxdialogs.desktop.test.DesktopDialogTest'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+ext {
+    ARTIFACTID = 'gdx-dialogs-desktop'
+}
+
+apply from: '../publish.gradle'

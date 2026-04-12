@@ -1,0 +1,10 @@
+# gdx-dialogs ProGuard consumer rules — Desktop (LWJGL3 / fat-JAR)
+#
+# GDXDialogsSystem loads the desktop implementation via ClassReflection.forName(),
+# i.e. via string literals. ProGuard/R8 would rename or remove these classes without
+# these rules, causing a RuntimeException at startup.
+
+-keep class com.mrz07.gdxdialogs.desktop.DesktopGDXDialogs { public protected *; }
+-keep class com.mrz07.gdxdialogs.desktop.dialogs.DesktopGDXButtonDialog { public protected *; }
+-keep class com.mrz07.gdxdialogs.desktop.dialogs.DesktopGDXProgressDialog { public protected *; }
+-keep class com.mrz07.gdxdialogs.desktop.dialogs.DesktopGDXTextPrompt { public protected *; }

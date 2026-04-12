@@ -1,0 +1,45 @@
+ext {
+    GROUPID = 'com.mrz07.gdxdialogs'
+    VERSION = '1.7.1'
+}
+
+buildscript {
+    repositories {
+        google()
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.9.3'
+    }
+}
+
+allprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+
+    group = GROUPID
+    version = VERSION
+
+    ext {
+        appName = 'gdx-dialogs'
+    }
+
+    repositories {
+        google()
+        gradlePluginPortal()
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    }
+}
+
+// Apply java-library to all subprojects except android (which has its own plugin)
+configure(subprojects - project(':android')) {
+    apply plugin: 'java-library'
+    java.sourceCompatibility = JavaVersion.VERSION_11
+    java.targetCompatibility = JavaVersion.VERSION_11
+}
+
+tasks.eclipse.doLast {
+    delete '.project'
+}

@@ -1,0 +1,97 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+def isLocalBuild() { hasProperty("LOCAL") }
+def isReleaseBuild() { hasProperty("RELEASE") }
+def isSnapshotBuild() { hasProperty("SNAPSHOT") }
+
+def getLocalRepositoryUrl() {
+    hasProperty('LOCAL_REPOSITORY_URL') ? LOCAL_REPOSITORY_URL
+            : 'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath
+}
+
+def getReleaseRepositoryUrl() {
+    hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
+            : 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+}
+
+def getSnapshotRepositoryUrl() {
+    hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
+            : 'https://oss.sonatype.org/content/repositories/snapshots/'
+}
+
+def getRepositoryUsername() { hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : '' }
+def getRepositoryPassword() { hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : '' }
+
+def getPublishVersion() {
+    isReleaseBuild() ? VERSION.replace('-SNAPSHOT', '') : VERSION
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            mavenAndroid(MavenPublication) {
+                groupId = GROUPID
+                artifactId = ARTIFACTID
+                version = getPublishVersion()
+
+                from components.release
+
+                pom {
+                    name = 'libGDX dialogs API - Android'
+                    description = 'Android implementation of the gdx-dialogs API for libGDX'
+                    url = 'https://github.com/MRZ07/gdx-dialogs'
+                    scm {
+                        url = 'scm:git@github.com:MRZ07/gdx-dialogs.git'
+                        connection = 'scm:git@github.com:MRZ07/gdx-dialogs.git'
+                        developerConnection = 'scm:git@github.com:MRZ07/gdx-dialogs.git'
+                    }
+                    licenses {
+                        license {
+                            name = 'The Apache Software License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution = 'repo'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'mrz07'
+                            name = 'MRZ07'
+                            email = 'mrz07@users.noreply.github.com'
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            if (isLocalBuild()) {
+                maven { url = getLocalRepositoryUrl() }
+            } else {
+                if (isReleaseBuild()) {
+                    maven {
+                        url = getReleaseRepositoryUrl()
+                        credentials {
+                            username = getRepositoryUsername()
+                            password = getRepositoryPassword()
+                        }
+                    }
+                }
+                if (isSnapshotBuild()) {
+                    maven {
+                        url = getSnapshotRepositoryUrl()
+                        credentials {
+                            username = getRepositoryUsername()
+                            password = getRepositoryPassword()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        required { isReleaseBuild() && gradle.taskGraph.hasTask('publish') }
+        sign publishing.publications.mavenAndroid
+    }
+}

@@ -1,0 +1,16 @@
+eclipse.project.name = appName + '-html'
+sourceSets.main.java.srcDirs = ['src/']
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+    implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+    implementation fileTree(dir: 'libs', include: '*.jar')
+}
+
+ext {
+    ARTIFACTID = 'gdx-dialogs-html'
+}
+
+apply from: '../publish.gradle'

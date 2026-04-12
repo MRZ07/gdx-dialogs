@@ -1,0 +1,12 @@
+eclipse.project.name = appName + '-core'
+sourceSets.main.java.srcDirs = ['src/']
+
+dependencies {
+    api "com.badlogicgames.gdx:gdx:$gdxVersion"
+}
+
+ext {
+    ARTIFACTID = 'gdx-dialogs-core'
+}
+
+apply from: '../publish.gradle'
