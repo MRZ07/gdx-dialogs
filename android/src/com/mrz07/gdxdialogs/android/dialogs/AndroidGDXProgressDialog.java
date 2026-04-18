@@ -58,18 +58,45 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 
 	@Override
 	public GDXProgressDialog show() {
-		if (progressDialog == null || !isBuild) {
+		if (!isBuild) {
 			throw new RuntimeException(AndroidGDXProgressDialog.class.getSimpleName() + " has not been build. Use"+
 					" build() before show().");
 		}
 
+		// Create Views and the dialog here on the UI thread, together with show().
+		// Doing this in build() required blocking the calling thread (Thread.sleep)
+		// which causes a deadlock/ANR when build() is called from the GL thread
+		// while it holds the DefaultAndroidInput lock.
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " now shown.");
-				if (!activity.isFinishing() && !activity.isDestroyed()) {
-					progressDialog.show();
+				if (activity.isFinishing() || activity.isDestroyed()) return;
+				AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+				builder.setTitle(title);
+				builder.setCancelable(cancelable);
+
+				ProgressBar progressBar = new ProgressBar(activity);
+				progressBar.setIndeterminate(true);
+				int padding = (int) (16 * activity.getResources().getDisplayMetrics().density);
+				progressBar.setPadding(padding, padding, padding, padding);
+
+				if (message != null && message.length() > 0) {
+					android.widget.LinearLayout layout = new android.widget.LinearLayout(activity);
+					layout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+					layout.setPadding(padding, padding, padding, padding);
+					layout.addView(progressBar);
+					TextView messageView = new TextView(activity);
+					messageView.setText(message);
+					messageView.setPadding(padding, 0, 0, 0);
+					layout.addView(messageView);
+					builder.setView(layout);
+				} else {
+					builder.setView(progressBar);
 				}
+
+				progressDialog = builder.create();
+				Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " now shown.");
+				progressDialog.show();
 			}
 		});
 
@@ -79,13 +106,15 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 	@Override
 	public GDXProgressDialog dismiss() {
 
-		if (progressDialog == null || !isBuild) {
+		if (!isBuild) {
 			throw new RuntimeException(AndroidGDXProgressDialog.class.getSimpleName() + " has not been build. Use "+
 					"build() before dismiss().");
 		}
 
-		Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " dismissed.");
-		progressDialog.dismiss(); // Method is thread safe.
+		if (progressDialog != null) {
+			Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " dismissed.");
+			progressDialog.dismiss(); // Method is thread safe.
+		}
 
 		return this;
 	}
@@ -98,48 +127,10 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 
 	@Override
 	public GDXProgressDialog build() {
-		if (progressDialog == null) {
-
-			activity.runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-					builder.setTitle(title);
-					builder.setCancelable(cancelable);
-
-					ProgressBar progressBar = new ProgressBar(activity);
-					progressBar.setIndeterminate(true);
-					int padding = (int) (16 * activity.getResources().getDisplayMetrics().density);
-					progressBar.setPadding(padding, padding, padding, padding);
-
-					if (message != null && message.length() > 0) {
-						android.widget.LinearLayout layout = new android.widget.LinearLayout(activity);
-						layout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
-						layout.setPadding(padding, padding, padding, padding);
-						layout.addView(progressBar);
-						TextView messageView = new TextView(activity);
-						messageView.setText(message);
-						messageView.setPadding(padding, 0, 0, 0);
-						layout.addView(messageView);
-						builder.setView(layout);
-					} else {
-						builder.setView(progressBar);
-					}
-
-					progressDialog = builder.create();
-					isBuild = true;
-				}
-
-			});
-
-			while (!isBuild) {
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+		// View and dialog creation is deferred to show() where it runs on the UI
+		// thread together with the actual show call. This ensures build() is
+		// non-blocking and safe to call from the GL thread.
+		isBuild = true;
 		return this;
 	}
 

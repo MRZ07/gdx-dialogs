@@ -65,51 +65,32 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 
 	@Override
 	public GDXTextPrompt show() {
-		if (alertDialog == null || !isBuild) {
+		if (!isBuild) {
 			throw new RuntimeException(GDXTextPrompt.class.getSimpleName() + " has not been build. Use build() before" +
 					" show().");
 		}
 
-		// When alert dialog is null, an except. is thrown and the code never gets here. No point in checking
-		if (userInput != null) {
-			userInput.setText(inputValue);
-		}
-
+		// Layout inflation, View creation and dialog creation happen here on the UI
+		// thread, together with show(). Doing this in build() required blocking the
+		// calling thread (Thread.sleep) which causes a deadlock/ANR when build() is
+		// called from the GL thread while it holds the DefaultAndroidInput lock.
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				if (activity.isFinishing() || activity.isDestroyed()) return;
-				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() + " now shown.");
-				alertDialog.show();
-			}
-		});
-
-		return this;
-	}
-
-	@Override
-	public GDXTextPrompt build() {
-		activity.runOnUiThread(new Runnable() {
-			//
-			@Override
-			public void run() {
-				//
 				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 				LayoutInflater li = LayoutInflater.from(activity);
-				//
 
-				View promptsView = li.inflate(getResourceId("gdxdialogs_inputtext", "layout"),
-                        null);
-
+				View promptsView = li.inflate(getResourceId("gdxdialogs_inputtext", "layout"), null);
 				alertDialogBuilder.setView(promptsView);
 
 				userInput = (EditText) promptsView.findViewById(getResourceId("gdxDialogsEditTextInput", "id"));
 				userInput.setFilters(new InputFilter[] {new InputFilter.LengthFilter(maxLength)});
 				userInput.setInputType(inputType);
+				userInput.setText(inputValue);
 
 				titleView = (TextView) promptsView.findViewById(getResourceId("gdxDialogsEnterTitle", "id"));
 				messageView = (TextView) promptsView.findViewById(getResourceId("gdxDialogsEnterMessage", "id"));
-
 				titleView.setText(title);
 				messageView.setText(message);
 
@@ -124,7 +105,6 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 								}
 							});
 						}
-
 					}
 				}).setNegativeButton(cancelLabel, new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int id) {
@@ -136,26 +116,25 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 									listener.cancel();
 								}
 							});
-
 						}
 					}
 				});
-				// create alert dialog alertDialog =
+
 				alertDialog = alertDialogBuilder.create();
-				isBuild = true;
+				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() + " now shown.");
+				alertDialog.show();
 			}
 		});
 
-		// Wait till TextPrompt is built.
-		while (!isBuild) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-			    //Again, never supposed to run, never hurts to know if it does.
-			    e.printStackTrace();
-			}
-		}
+		return this;
+	}
 
+	@Override
+	public GDXTextPrompt build() {
+		// Layout inflation, View creation and dialog creation are deferred to show()
+		// where they run on the UI thread together with the actual show call. This
+		// ensures build() is non-blocking and safe to call from the GL thread.
+		isBuild = true;
 		return this;
 	}
 

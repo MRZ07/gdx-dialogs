@@ -59,19 +59,24 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 	@Override
 	public GDXButtonDialog show() {
 
-		if (dialog == null || !isBuild) {
+		if (!isBuild) {
 			throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been built. Use build() " +
 					"before show().");
 		}
 
+		// Create and show the dialog together on the UI thread.
+		// This keeps build() non-blocking so it is safe to call from the GL thread
+		// (which holds the DefaultAndroidInput lock). Blocking in build() while
+		// that lock is held causes a deadlock/ANR when the main thread tries to
+		// dispatch a key event through onKey() at the same time.
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				if (activity.isFinishing() || activity.isDestroyed()) return;
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
 						" now shown.");
-				if (!activity.isFinishing() && !activity.isDestroyed()) {
-					dialog.show();
-				}
+				dialog = builder.create();
+				dialog.show();
 			}
 		});
 
@@ -81,14 +86,16 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 	@Override
 	public GDXButtonDialog dismiss() {
 
-		if (dialog == null || !isBuild) {
-			throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() " +
+		if (!isBuild) {
+			throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been built. Use build() " +
 					"before dismiss().");
 		}
 
-		Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
-				" dismissed.");
-		dialog.dismiss(); //This method is thread safe.
+		if (dialog != null) {
+			Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
+					" dismissed.");
+			dialog.dismiss(); //This method is thread safe.
+		}
 
 		return this;
 	}
@@ -110,6 +117,11 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 
 	@Override
 	public GDXButtonDialog build() {
+		// AlertDialog.Builder configuration is safe on any thread.
+		// build() must NOT block: it may be called from the GL thread while it holds
+		// the DefaultAndroidInput lock. Any blocking here (Thread.sleep or waiting on
+		// a runOnUiThread result) will deadlock if the main thread is simultaneously
+		// trying to deliver a key event via onKey(), which also needs that lock.
 		builder = new AlertDialog.Builder(activity);
 		builder.setCancelable(cancelable);
 		builder.setMessage(message);
@@ -173,24 +185,7 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 			}
 		}
 
-		activity.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				dialog = builder.create();
-				isBuild = true;
-			}
-		});
-
-		// Wait until the button is built
-		while (!isBuild) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				//Not meant to run but we better know when it does.
-				e.printStackTrace();
-			}
-		}
-
+		isBuild = true;
 		return this;
 	}
 
