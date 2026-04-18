@@ -78,6 +78,7 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				if (activity.isFinishing() || activity.isDestroyed()) return;
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() + " now shown.");
 				alertDialog.show();
 			}
