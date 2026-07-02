@@ -26,3 +26,8 @@
 -keep class com.mrz07.gdxdialogs.android.dialogs.AndroidGDXButtonDialog { public protected *; }
 -keep class com.mrz07.gdxdialogs.android.dialogs.AndroidGDXProgressDialog { public protected *; }
 -keep class com.mrz07.gdxdialogs.android.dialogs.AndroidGDXTextPrompt { public protected *; }
+
+# GDXDialogs.newDialog() uses Class.getName() as the registry key.
+# R8 must not rename any class in this package; obfuscated names would
+# cause newDialog() to throw "[obfuscatedName] is not registered."
+-keepnames class com.mrz07.gdxdialogs.**
