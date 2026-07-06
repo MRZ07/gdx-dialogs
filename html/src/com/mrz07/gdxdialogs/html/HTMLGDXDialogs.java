@@ -16,20 +16,20 @@
 
 package com.mrz07.gdxdialogs.html;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.utils.reflect.ClassReflection;
-
 import com.mrz07.gdxdialogs.core.GDXDialogs;
-import com.mrz07.gdxdialogs.core.GDXDialogsVars;
-import com.mrz07.gdxdialogs.core.dialogs.*;
-import com.mrz07.gdxdialogs.html.dialogs.*;
+import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
+import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
+import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
+import com.mrz07.gdxdialogs.html.dialogs.HTMLGDXButtonDialog;
+import com.mrz07.gdxdialogs.html.dialogs.HTMLGDXProgressDialog;
+import com.mrz07.gdxdialogs.html.dialogs.HTMLGDXTextPrompt;
 
 public class HTMLGDXDialogs extends GDXDialogs {
 
     public HTMLGDXDialogs() {
-        registerDialog(GDXButtonDialog.class.getName(), HTMLGDXButtonDialog.class.getName());
-        registerDialog(GDXProgressDialog.class.getName(), HTMLGDXProgressDialog.class.getName());
-        registerDialog(GDXTextPrompt.class.getName(), HTMLGDXTextPrompt.class.getName());
+        registerDialog(GDXButtonDialog.class, HTMLGDXButtonDialog::new);
+        registerDialog(GDXProgressDialog.class, HTMLGDXProgressDialog::new);
+        registerDialog(GDXTextPrompt.class, HTMLGDXTextPrompt::new);
     }
 
 }

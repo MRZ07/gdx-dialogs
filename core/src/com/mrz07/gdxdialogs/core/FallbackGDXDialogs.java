@@ -26,9 +26,9 @@ import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 class FallbackGDXDialogs extends GDXDialogs {
 
 	public FallbackGDXDialogs() {
-		registerDialog(GDXButtonDialog.class.getName(), FallbackGDXButtonDialog.class.getName());
-		registerDialog(GDXProgressDialog.class.getName(), FallbackGDXProgressDialog.class.getName());
-		registerDialog(GDXTextPrompt.class.getName(), FallbackGDXTextPrompt.class.getName());
+		registerDialog(GDXButtonDialog.class, FallbackGDXButtonDialog::new);
+		registerDialog(GDXProgressDialog.class, FallbackGDXProgressDialog::new);
+		registerDialog(GDXTextPrompt.class, FallbackGDXTextPrompt::new);
 	}
 
 }

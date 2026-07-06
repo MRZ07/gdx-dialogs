@@ -16,30 +16,23 @@
 
 package com.mrz07.gdxdialogs.core;
 
-import com.badlogic.gdx.utils.ArrayMap;
-import com.badlogic.gdx.utils.reflect.ClassReflection;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class GDXDialogs {
 
-	protected ArrayMap<String, String> registeredDialogs = new ArrayMap<String, String>();
+	private final Map<Class<?>, DialogFactory<?>> factories = new HashMap<>();
 
+	@SuppressWarnings("unchecked")
 	public <T> T newDialog(Class<T> cls) {
-		String className = cls.getName();
-		if (registeredDialogs.containsKey(className)) {
-
-			try {
-				final Class<T> dialogClazz = ClassReflection.forName(registeredDialogs.get(className));
-
-				Object dialogObject = ClassReflection.getConstructor(dialogClazz).newInstance();
-				return (T) dialogObject;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		DialogFactory<?> factory = factories.get(cls);
+		if (factory != null) {
+			return cls.cast(((DialogFactory<T>) factory).create());
 		}
-		throw new RuntimeException(cls.getName() + "is not registered.");
+		throw new RuntimeException(cls.getName() + " is not registered.");
 	}
 
-	public void registerDialog(String interfaceName, String clazzName) {
-		registeredDialogs.put(interfaceName, clazzName);
+	protected <T> void registerDialog(Class<T> interfaceClass, DialogFactory<T> factory) {
+		factories.put(interfaceClass, factory);
 	}
 }

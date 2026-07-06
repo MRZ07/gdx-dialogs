@@ -27,9 +27,9 @@ import com.mrz07.gdxdialogs.ios.dialogs.IOSGDXTextPrompt;
 public class IOSGDXDialogs extends GDXDialogs {
 
 	public IOSGDXDialogs() {
-		registerDialog(GDXButtonDialog.class.getName(), IOSGDXButtonDialog.class.getName());
-		registerDialog(GDXProgressDialog.class.getName(), IOSGDXProgressDialog.class.getName());
-		registerDialog(GDXTextPrompt.class.getName(), IOSGDXTextPrompt.class.getName());
+		registerDialog(GDXButtonDialog.class, IOSGDXButtonDialog::new);
+		registerDialog(GDXProgressDialog.class, IOSGDXProgressDialog::new);
+		registerDialog(GDXTextPrompt.class, IOSGDXTextPrompt::new);
 	}
 
 }

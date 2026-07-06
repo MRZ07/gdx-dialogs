@@ -16,7 +16,6 @@
 
 package com.mrz07.gdxdialogs.iosmoe;
 
-import com.badlogic.gdx.Gdx;
 import com.mrz07.gdxdialogs.core.GDXDialogs;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
@@ -27,10 +26,10 @@ import com.mrz07.gdxdialogs.iosmoe.dialogs.IOSMOEGDXTextPrompt;
 
 public class IOSMOEGDXDialogs extends GDXDialogs {
 
-	public IOSMOEGDXDialogs () {
-		registerDialog(GDXButtonDialog.class.getName(), IOSMOEGDXButtonDialog.class.getName());
-		registerDialog(GDXProgressDialog.class.getName(), IOSMOEGDXProgressDialog.class.getName());
-		registerDialog(GDXTextPrompt.class.getName(), IOSMOEGDXTextPrompt.class.getName());
+	public IOSMOEGDXDialogs() {
+		registerDialog(GDXButtonDialog.class, IOSMOEGDXButtonDialog::new);
+		registerDialog(GDXProgressDialog.class, IOSMOEGDXProgressDialog::new);
+		registerDialog(GDXTextPrompt.class, IOSMOEGDXTextPrompt::new);
 	}
 
 }

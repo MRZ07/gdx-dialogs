@@ -18,8 +18,6 @@ package com.mrz07.gdxdialogs.android;
 
 import android.app.Activity;
 
-import com.badlogic.gdx.utils.reflect.ClassReflection;
-
 import com.mrz07.gdxdialogs.android.dialogs.AndroidGDXButtonDialog;
 import com.mrz07.gdxdialogs.android.dialogs.AndroidGDXProgressDialog;
 import com.mrz07.gdxdialogs.android.dialogs.AndroidGDXTextPrompt;
@@ -30,33 +28,10 @@ import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 
 public class AndroidGDXDialogs extends GDXDialogs {
 
-	private Activity activity;
-
 	public AndroidGDXDialogs(Activity activity) {
-		this.activity = activity;
-
-		registerDialog(GDXButtonDialog.class.getName(), AndroidGDXButtonDialog.class.getName());
-		registerDialog(GDXProgressDialog.class.getName(), AndroidGDXProgressDialog.class.getName());
-		registerDialog(GDXTextPrompt.class.getName(), AndroidGDXTextPrompt.class.getName());
-
-	}
-
-	@Override
-	public <T> T newDialog(Class<T> cls) {
-		String className = cls.getName();
-		if (registeredDialogs.containsKey(className)) {
-
-			try {
-				final Class<T> dialogClazz = ClassReflection.forName(registeredDialogs.get(className));
-
-				Object dialogObject = ClassReflection.getConstructor(dialogClazz, Activity.class).newInstance(activity);
-
-				return dialogClazz.cast(dialogObject);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		throw new RuntimeException(cls.getName() + "is not registered.");
+		registerDialog(GDXButtonDialog.class, () -> new AndroidGDXButtonDialog(activity));
+		registerDialog(GDXProgressDialog.class, () -> new AndroidGDXProgressDialog(activity));
+		registerDialog(GDXTextPrompt.class, () -> new AndroidGDXTextPrompt(activity));
 	}
 
 }

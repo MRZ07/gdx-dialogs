@@ -27,9 +27,9 @@ import com.mrz07.gdxdialogs.desktop.dialogs.DesktopGDXTextPrompt;
 public class DesktopGDXDialogs extends GDXDialogs {
 
 	public DesktopGDXDialogs() {
-		registerDialog(GDXButtonDialog.class.getName(), DesktopGDXButtonDialog.class.getName());
-		registerDialog(GDXProgressDialog.class.getName(), DesktopGDXProgressDialog.class.getName());
-		registerDialog(GDXTextPrompt.class.getName(), DesktopGDXTextPrompt.class.getName());
+		registerDialog(GDXButtonDialog.class, DesktopGDXButtonDialog::new);
+		registerDialog(GDXProgressDialog.class, DesktopGDXProgressDialog::new);
+		registerDialog(GDXTextPrompt.class, DesktopGDXTextPrompt::new);
 	}
 
 }
