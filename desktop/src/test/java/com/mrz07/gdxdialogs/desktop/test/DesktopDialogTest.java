@@ -6,6 +6,8 @@ import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.ButtonClickListener;
+import com.mrz07.gdxdialogs.core.GDXDialogs;
+import com.mrz07.gdxdialogs.core.GDXDialogsSystem;
 import com.mrz07.gdxdialogs.desktop.DesktopGDXDialogs;
 
 import javax.swing.*;
@@ -16,7 +18,7 @@ public class DesktopDialogTest {
         // Install a minimal Gdx.app stub so internal debug/postRunnable calls work
         Gdx.app = new StubApplication();
 
-        DesktopGDXDialogs dialogs = new DesktopGDXDialogs();
+        GDXDialogs dialogs = GDXDialogsSystem.install(new DesktopGDXDialogs());
 
         // 1. Button Dialog
         GDXButtonDialog buttonDialog = dialogs.newDialog(GDXButtonDialog.class);

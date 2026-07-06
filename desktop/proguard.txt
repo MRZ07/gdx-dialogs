@@ -1,7 +1,5 @@
 # gdx-dialogs ProGuard consumer rules — Desktop (LWJGL3 / fat-JAR)
 #
-# GDXDialogsSystem loads DesktopGDXDialogs by name via ClassReflection.forName().
-# All other dialog classes are now instantiated directly through DialogFactory lambdas
-# and need no -keep rules.
-
--keep class com.mrz07.gdxdialogs.desktop.DesktopGDXDialogs { public protected *; }
+# No rules required since v2.0.0:
+# - no runtime reflection in gdx-dialogs core or platform modules
+# - dialog creation uses explicit DialogFactory registration

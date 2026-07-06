@@ -32,7 +32,7 @@ public abstract class GDXDialogs {
 		throw new RuntimeException(cls.getName() + " is not registered.");
 	}
 
-	protected <T> void registerDialog(Class<T> interfaceClass, DialogFactory<T> factory) {
+	public <T> void registerDialog(Class<T> interfaceClass, DialogFactory<T> factory) {
 		factories.put(interfaceClass, factory);
 	}
 }

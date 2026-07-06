@@ -9,9 +9,9 @@ artifacts {
     consumer(file('proguard.txt'))
 }
 
-// Expose consumer ProGuard rules so that fat-JAR / ProGuard users
-// automatically pick up the required -keep rules for the reflectively
-// loaded DesktopGDXDialogs implementation classes.
+// Expose consumer ProGuard rules file for fat-JAR / ProGuard users.
+// Since v2.0.0 the file is intentionally rule-free because gdx-dialogs
+// no longer uses runtime reflection.
 task copyProguardRules(type: Copy) {
     from 'proguard.txt'
     into "$buildDir/resources/main/META-INF/proguard"

@@ -38,6 +38,12 @@ libGDX extension providing cross-platform support for native dialogs.
 - All Swing calls moved to `SwingUtilities.invokeLater` for proper Event Dispatch Thread safety on modern JVMs
 - Test launcher added (`DesktopDialogTest`) to exercise all three dialog types without a full libGDX window
 
+### v2.0.0 (breaking)
+- Removed all runtime reflection from gdx-dialogs
+- `GDXDialogsSystem.install()` is now explicit and requires a platform-specific `GDXDialogs` instance
+- Dialog creation now uses typed `DialogFactory` registrations end-to-end (no class-name lookups)
+- Consumer ProGuard keep rules are no longer required by gdx-dialogs itself
+
 ---
 
 ## Supported Platforms
@@ -74,12 +80,13 @@ Then add the dependencies you need:
 
 **Core** *(required by all platforms)*
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:1.7.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.0.0'
+
 ```
 
 **Android**
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:1.7.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.0.0'
 ```
 
 Copy the [`android/res`](android/res) folder from this project into your Android module and keep the directory structure.  
@@ -87,27 +94,20 @@ You may edit [`android/res/values-v11/styles.xml`](android/res/values-v11/styles
 
 **Desktop** *(Swing-based fallback, works on macOS + LWJGL3)*
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:1.7.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.0.0'
 ```
 
 **iOS (RoboVM)**
 
-Add to your `robovm.xml`:
-```xml
-<forceLinkClasses>
-    <pattern>com.mrz07.gdxdialogs.ios.IOSGDXDialogs</pattern>
-</forceLinkClasses>
-```
-
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-ios:1.7.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-ios:2.0.0'
 ```
 
 **HTML / GWT**
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:1.7.1'
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:1.7.1:sources'
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:1.7.1:sources'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.0.0'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.0.0:sources'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.0.0:sources'
 ```
 
 Add to your `GdxDefinition.gwt.xml`:
@@ -122,9 +122,40 @@ Add to your `GdxDefinition.gwt.xml`:
 
 **Enable**
 
+Install with explicit platform implementation (v2.0.0+):
+
 ```java
-GDXDialogs dialogs = GDXDialogsSystem.install();
+// Android (inside your Activity)
+GDXDialogs dialogs = GDXDialogsSystem.install(new AndroidGDXDialogs(this));
 ```
+
+```java
+// Desktop
+GDXDialogs dialogs = GDXDialogsSystem.install(new DesktopGDXDialogs());
+```
+
+```java
+// iOS (RoboVM)
+GDXDialogs dialogs = GDXDialogsSystem.install(new IOSGDXDialogs());
+```
+
+```java
+// HTML / GWT
+GDXDialogs dialogs = GDXDialogsSystem.install(new HTMLGDXDialogs());
+```
+
+If your shared code receives the dialog manager later:
+
+```java
+GDXDialogs dialogs = GDXDialogsSystem.getDialogManager();
+```
+
+### Migration from v1.x
+
+- Old API (removed): `GDXDialogsSystem.install()`
+- New API: `GDXDialogsSystem.install(new <Platform>GDXDialogs(...))`
+- Old string registration API (removed): `registerDialog("interface", "impl")`
+- New typed registration API: `registerDialog(Interface.class, Impl::new)`
 
 **ButtonDialog**
 
@@ -215,18 +246,16 @@ dialog.setClickListener(new ButtonClickListener() {
 Register your dialog at runtime:
 
 ```java
-if (Gdx.app.getType() == ApplicationType.Android) {
-    dialogs.registerDialog("com.example.MyDialog", "com.example.android.AndroidMyDialog");
-} else if (Gdx.app.getType() == ApplicationType.Desktop) {
-    dialogs.registerDialog("com.example.MyDialog", "com.example.desktop.DesktopMyDialog");
-} else if (Gdx.app.getType() == ApplicationType.iOS) {
-    dialogs.registerDialog("com.example.MyDialog", "com.example.ios.IOSMyDialog");
-} else {
-    dialogs.registerDialog("com.example.MyDialog", "com.example.FallbackMyDialog");
-}
+dialogs.registerDialog(MyDialog.class, MyPlatformDialog::new);
 ```
 
-> **Note:** Every platform-specific implementation must have a no-arg constructor. Android implementations must also have a constructor taking an `Activity` parameter.
+Android with `Activity`-bound dialog constructor:
+
+```java
+dialogs.registerDialog(MyDialog.class, () -> new AndroidMyDialog(activity));
+```
+
+> **Note:** Runtime reflection is removed in v2.0.0. Keep rules for gdx-dialogs classes are no longer required.
 
 ---
 
@@ -234,6 +263,7 @@ if (Gdx.app.getType() == ApplicationType.Android) {
 
 | Version | Notes |
 |---|---|
+| 2.0.0 | Breaking: remove all runtime reflection; explicit platform install API; typed `DialogFactory` dialog registration |
 | 1.7.1 | Desktop ProGuard/R8 consumer rules; Gradle 9.4 · JitPack compatibility |
 | 1.5.0 | `ProgressDialog.setCancelable(true)` — user-dismissable progress dialogs on Android, Desktop, iOS |
 | 1.4.0 | Gradle 9.4 · AGP 8.9.3 · libGDX 1.14.0 · RoboVM 2.3.23 · Android 13+ compat · Swing EDT fix · maven-publish migration · ios-moe removed |
