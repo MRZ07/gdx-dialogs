@@ -92,6 +92,14 @@ implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.0.0'
 Copy the [`android/res`](android/res) folder from this project into your Android module and keep the directory structure.  
 You may edit [`android/res/values-v11/styles.xml`](android/res/values-v11/styles.xml) to choose a different theme. If you already have a `styles.xml`, merge the relevant entries.
 
+> **Note for `shrinkResources true` consumers:** `TextPrompt` resolves its layout/view IDs (`gdxdialogs_inputtext.xml`, `gdxDialogsEditTextInput`, etc.) by string name at runtime via `Resources.getIdentifier(...)`, not via a static `R.id`/`R.layout` reference. This is untouched by ProGuard/R8 code shrinking (no consumer keep rules needed — see Changelog v2.0.0), but Android's *resource* shrinker can't see the dynamic lookup and may strip these resources as "unused" if you have `shrinkResources true` enabled. If you use `TextPrompt` and enable resource shrinking, add this to one of your app's `res/values/*.xml` files:
+> ```xml
+> <resources xmlns:tools="http://schemas.android.com/tools">
+>     <tools:keep android:resource="@layout/gdxdialogs_inputtext" />
+> </resources>
+> ```
+> Not needed if you only use `ButtonDialog`/`ProgressDialog`, or if `shrinkResources` is disabled/absent.
+
 **Desktop** *(Swing-based fallback, works on macOS + LWJGL3)*
 ```gradle
 implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.0.0'
