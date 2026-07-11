@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import com.badlogic.gdx.Gdx;
 
+import com.mrz07.gdxdialogs.android.R;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -81,16 +82,16 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 				LayoutInflater li = LayoutInflater.from(activity);
 
-				View promptsView = li.inflate(getResourceId("gdxdialogs_inputtext", "layout"), null);
+				View promptsView = li.inflate(R.layout.gdxdialogs_inputtext, null);
 				alertDialogBuilder.setView(promptsView);
 
-				userInput = (EditText) promptsView.findViewById(getResourceId("gdxDialogsEditTextInput", "id"));
+				userInput = (EditText) promptsView.findViewById(R.id.gdxDialogsEditTextInput);
 				userInput.setFilters(new InputFilter[] {new InputFilter.LengthFilter(maxLength)});
 				userInput.setInputType(inputType);
 				userInput.setText(inputValue);
 
-				titleView = (TextView) promptsView.findViewById(getResourceId("gdxDialogsEnterTitle", "id"));
-				messageView = (TextView) promptsView.findViewById(getResourceId("gdxDialogsEnterMessage", "id"));
+				titleView = (TextView) promptsView.findViewById(R.id.gdxDialogsEnterTitle);
+				messageView = (TextView) promptsView.findViewById(R.id.gdxDialogsEnterMessage);
 				titleView.setText(title);
 				messageView.setText(message);
 
@@ -136,17 +137,6 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 		// ensures build() is non-blocking and safe to call from the GL thread.
 		isBuild = true;
 		return this;
-	}
-
-	public int getResourceId(String pVariableName, String pVariableType) {
-		try {
-			return activity.getResources().getIdentifier(pVariableName, pVariableType, activity.getPackageName());
-		} catch (Exception e) {
-			Gdx.app.error(GDXDialogsVars.LOG_TAG, "Cannot find resouce with name: " + pVariableName +
-                    " Did you copy the layouts to /res/layouts and /res/layouts_v14 ?");
-			e.printStackTrace();
-			return -1;
-		}
 	}
 
 	@Override

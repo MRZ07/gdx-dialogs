@@ -1,6 +1,6 @@
 ext {
     GROUPID = 'com.mrz07.gdxdialogs'
-    VERSION = '2.0.0'
+    VERSION = '2.0.2'
 }
 
 buildscript {

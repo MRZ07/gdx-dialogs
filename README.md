@@ -92,8 +92,6 @@ implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.0.0'
 Copy the [`android/res`](android/res) folder from this project into your Android module and keep the directory structure.  
 You may edit [`android/res/values-v11/styles.xml`](android/res/values-v11/styles.xml) to choose a different theme. If you already have a `styles.xml`, merge the relevant entries.
 
-> **`shrinkResources true` support:** `TextPrompt` resolves its layout and view IDs by string name at runtime via `Resources.getIdentifier(...)`. The AAR ships `res/raw/keep.xml` with a `tools:keep` directive covering all required resources, so no consumer-side keep rules are needed even when `shrinkResources true` is enabled.
-
 **Desktop** *(Swing-based fallback, works on macOS + LWJGL3)*
 ```gradle
 implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.0.0'

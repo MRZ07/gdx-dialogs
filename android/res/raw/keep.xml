@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-  Prevents Android's resource shrinker from stripping the TextPrompt layout
-  and its view IDs. These are looked up by string name at runtime via
-  Resources.getIdentifier(), which the shrinker cannot trace statically.
-  This file is packaged in the AAR so consumers do not need their own keep rules.
--->
-<resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@layout/gdxdialogs_inputtext,@id/gdxDialogsEditTextInput,@id/gdxDialogsEnterTitle,@id/gdxDialogsEnterMessage" />
