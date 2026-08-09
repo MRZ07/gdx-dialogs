@@ -17,12 +17,15 @@
 package com.mrz07.gdxdialogs.desktop.dialogs;
 
 import com.badlogic.gdx.Gdx;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
 
 import javax.swing.JOptionPane;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class DesktopGDXProgressDialog implements GDXProgressDialog {
 
@@ -34,7 +37,17 @@ public class DesktopGDXProgressDialog implements GDXProgressDialog {
 	private CharSequence message = "";
 	private boolean cancelable = false;
 
+	/** Whether this dialog currently holds GDXDialogGate; guards against a stale windowClosed release. */
+	private boolean gateClaimed;
+
 	public DesktopGDXProgressDialog() {
+	}
+
+	private void releaseGate() {
+		if (gateClaimed) {
+			gateClaimed = false;
+			GDXDialogGate.release();
+		}
 	}
 
 	@Override
@@ -56,6 +69,20 @@ public class DesktopGDXProgressDialog implements GDXProgressDialog {
 			public void run() {
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXProgressDialog.class.getSimpleName() +
 						" now shown.");
+
+				if (!GDXDialogGate.tryClaim()) {
+					Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXProgressDialog.class.getSimpleName() +
+							" not shown: another dialog is already visible.");
+					return;
+				}
+				gateClaimed = true;
+
+				dialog.addWindowListener(new WindowAdapter() {
+					@Override
+					public void windowClosed(WindowEvent e) {
+						releaseGate();
+					}
+				});
 				dialog.setVisible(true);
 			}
 		});
@@ -69,6 +96,7 @@ public class DesktopGDXProgressDialog implements GDXProgressDialog {
 			@Override
 			public void run() {
 				dialog.dispose();
+				releaseGate();
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXProgressDialog.class.getSimpleName() + " dismissed.");
 			}
 		});

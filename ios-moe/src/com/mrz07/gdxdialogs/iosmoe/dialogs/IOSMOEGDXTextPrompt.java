@@ -22,6 +22,7 @@ import com.badlogic.gdx.Gdx;
 
 import org.moe.natj.general.ann.ByValue;
 import org.moe.natj.general.ann.NInt;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -54,6 +55,11 @@ public class IOSMOEGDXTextPrompt implements GDXTextPrompt {
 		if (alertView == null) {
 			throw new RuntimeException(GDXTextPrompt.class.getSimpleName() + " has not been build. Use build() before show().");
 		}
+		if (!GDXDialogGate.tryClaim()) {
+			Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSMOEGDXTextPrompt.class.getSimpleName() +
+					" not shown: another dialog is already visible.");
+			return this;
+		}
 		Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSMOEGDXTextPrompt.class.getSimpleName() + " now shown.");
 		Gdx.app.postRunnable(new Runnable() {
 			@Override
@@ -73,6 +79,7 @@ public class IOSMOEGDXTextPrompt implements GDXTextPrompt {
 		}
 		UIAlertViewDelegate delegate = new UIAlertViewDelegate() {
 			@Override public void alertViewDidDismissWithButtonIndex (UIAlertView alertView, @NInt long buttonIndex) {
+				GDXDialogGate.release();
 				if (listener != null) {
 					if (buttonIndex == 0) {
 						Gdx.app.postRunnable(new Runnable() {
@@ -191,6 +198,7 @@ public class IOSMOEGDXTextPrompt implements GDXTextPrompt {
 			throw new RuntimeException(GDXTextPrompt.class.getSimpleName() + " has not been build. Use build() before dismiss().");
 		}
 		Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSMOEGDXTextPrompt.class.getSimpleName() + " dismissed.");
+		GDXDialogGate.release();
 		alertView.dismissWithClickedButtonIndexAnimated(0, false);
 		return this;
 	}

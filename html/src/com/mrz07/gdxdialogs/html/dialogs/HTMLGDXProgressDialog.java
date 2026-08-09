@@ -16,6 +16,7 @@
 
 package com.mrz07.gdxdialogs.html.dialogs;
 
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
 
@@ -42,6 +43,9 @@ public class HTMLGDXProgressDialog implements GDXProgressDialog {
         if (isBuild == false) {
             throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() before show().");
         }
+        if (!GDXDialogGate.tryClaim()) {
+            return this;
+        }
         showJSProgressDialog(toString());
         return this;
     }
@@ -52,6 +56,7 @@ public class HTMLGDXProgressDialog implements GDXProgressDialog {
             throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() before show().");
         }
         dismissJSProgressDialog(toString());
+        GDXDialogGate.release();
         return this;
     }
 

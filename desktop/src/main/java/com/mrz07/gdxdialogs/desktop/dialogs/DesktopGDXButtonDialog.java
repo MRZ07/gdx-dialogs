@@ -18,6 +18,7 @@ package com.mrz07.gdxdialogs.desktop.dialogs;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.listener.ButtonClickListener;
@@ -31,6 +32,8 @@ import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Locale;
 
 public class DesktopGDXButtonDialog implements GDXButtonDialog {
@@ -44,7 +47,19 @@ public class DesktopGDXButtonDialog implements GDXButtonDialog {
 
 	private boolean isBuild = false;
 
+	private JDialog swingDialog;
+
+	/** Whether this dialog currently holds GDXDialogGate; guards against a stale windowClosed release. */
+	private boolean gateClaimed;
+
 	public DesktopGDXButtonDialog() {
+	}
+
+	private void releaseGate() {
+		if (gateClaimed) {
+			gateClaimed = false;
+			GDXDialogGate.release();
+		}
 	}
 
 	@Override
@@ -77,6 +92,7 @@ public class DesktopGDXButtonDialog implements GDXButtonDialog {
 		final String m = message.toString();
 		final ButtonClickListener l = listener;
 		new Thread(() -> {
+			if (!GDXDialogGate.tryClaim()) return;
 			try {
 				StringBuilder sb = new StringBuilder("button returned of (display dialog ");
 				sb.append(appleStr(m)).append(" with title ").append(appleStr(t)).append(" buttons {");
@@ -102,6 +118,8 @@ public class DesktopGDXButtonDialog implements GDXButtonDialog {
 				}
 			} catch (Exception ex) {
 				Gdx.app.error(GDXDialogsVars.LOG_TAG, "osascript dialog failed", ex);
+			} finally {
+				GDXDialogGate.release();
 			}
 		}, "gdx-dialog-mac").start();
 	}
@@ -116,7 +134,16 @@ public class DesktopGDXButtonDialog implements GDXButtonDialog {
 		SwingUtilities.invokeLater(() -> {
 			Gdx.app.debug(GDXDialogsVars.LOG_TAG,
 					DesktopGDXButtonDialog.class.getSimpleName() + " now shown.");
+
+			if (!GDXDialogGate.tryClaim()) {
+				Gdx.app.debug(GDXDialogsVars.LOG_TAG,
+						DesktopGDXButtonDialog.class.getSimpleName() + " not shown: another dialog is already visible.");
+				return;
+			}
+			gateClaimed = true;
+
 			final JDialog dialog = new JDialog((java.awt.Frame) null, (String) title, false);
+			swingDialog = dialog;
 			dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 			dialog.setLayout(new BorderLayout(8, 8));
 			JLabel msg = new JLabel("<html>" + message + "</html>");
@@ -128,6 +155,7 @@ public class DesktopGDXButtonDialog implements GDXButtonDialog {
 				JButton btn = new JButton(options[i].toString());
 				btn.addActionListener(e -> {
 					dialog.dispose();
+					releaseGate();
 					if (listener != null) {
 						Gdx.app.postRunnable(() -> listener.click(idx));
 					}
@@ -139,14 +167,25 @@ public class DesktopGDXButtonDialog implements GDXButtonDialog {
 			dialog.setMinimumSize(new Dimension(280, dialog.getHeight()));
 			dialog.setLocationRelativeTo(null);
 			dialog.setAlwaysOnTop(true);
+			dialog.addWindowListener(new WindowAdapter() {
+				@Override
+				public void windowClosed(WindowEvent e) {
+					releaseGate();
+				}
+			});
 			dialog.setVisible(true);
 		});
 	}
 
 	@Override
 	public GDXButtonDialog dismiss() {
-		Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXButtonDialog.class.getSimpleName() + " dismiss " +
-				"ignored. (Desktop ButtonDialogs cannot be dismissed)");
+		SwingUtilities.invokeLater(() -> {
+			if (swingDialog != null) {
+				swingDialog.dispose();
+				releaseGate();
+				Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXButtonDialog.class.getSimpleName() + " dismissed.");
+			}
+		});
 		return this;
 	}
 

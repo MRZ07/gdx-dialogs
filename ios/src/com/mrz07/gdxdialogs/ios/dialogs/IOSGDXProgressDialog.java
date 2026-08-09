@@ -21,6 +21,7 @@ import org.robovm.apple.uikit.UIAlertView;
 
 import com.badlogic.gdx.Gdx;
 
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
 
@@ -53,6 +54,11 @@ public class IOSGDXProgressDialog implements GDXProgressDialog {
 		if (alertView == null) {
 			throw new RuntimeException(GDXProgressDialog.class.getSimpleName() + " has not been build. Use build() before show().");
 		}
+		if (!GDXDialogGate.tryClaim()) {
+			Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSGDXProgressDialog.class.getSimpleName() +
+					" not shown: another dialog is already visible.");
+			return this;
+		}
 		Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSGDXProgressDialog.class.getSimpleName() + " now shown.");
 		alertView.show();
 		return this;
@@ -64,6 +70,7 @@ public class IOSGDXProgressDialog implements GDXProgressDialog {
 			throw new RuntimeException(GDXProgressDialog.class.getSimpleName() + " has not been build. Use build() before dismiss().");
 		}
 		Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSGDXProgressDialog.class.getSimpleName() + " dismissed.");
+		GDXDialogGate.release();
 		alertView.dismiss(0, false);
 		return this;
 	}

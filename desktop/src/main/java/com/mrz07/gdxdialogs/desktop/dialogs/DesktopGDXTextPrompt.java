@@ -17,6 +17,7 @@
 package com.mrz07.gdxdialogs.desktop.dialogs;
 
 import com.badlogic.gdx.Gdx;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -25,6 +26,8 @@ import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Locale;
 
 public class DesktopGDXTextPrompt implements GDXTextPrompt {
@@ -39,7 +42,19 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
 
     private InputType inputType = InputType.PLAIN_TEXT;
 
+    private JDialog swingDialog;
+
+    /** Whether this dialog currently holds [GDXDialogGate]; guards against a stale windowClosed release. */
+    private boolean gateClaimed;
+
     public DesktopGDXTextPrompt() {
+    }
+
+    private void releaseGate() {
+        if (gateClaimed) {
+            gateClaimed = false;
+            GDXDialogGate.release();
+        }
     }
 
     @Override
@@ -61,9 +76,10 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
         final String def = value.toString();
         final String confirm = confirmButtonLabel.toString();
         final String cancel = cancelButtonLabel.toString();
-        final TextPromptListener l = listener;
-        new Thread(() -> {
-            try {
+		final TextPromptListener l = listener;
+		new Thread(() -> {
+			if (!GDXDialogGate.tryClaim()) return;
+			try {
                 String script =
                         "set r to display dialog " + appleStr(m) +
                         " default answer " + appleStr(def) +
@@ -87,10 +103,12 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
                         Gdx.app.postRunnable(l::cancel);
                     }
                 }
-            } catch (Exception ex) {
-                Gdx.app.error(GDXDialogsVars.LOG_TAG, "osascript dialog failed", ex);
-            }
-        }, "gdx-dialog-mac").start();
+			} catch (Exception ex) {
+				Gdx.app.error(GDXDialogsVars.LOG_TAG, "osascript dialog failed", ex);
+			} finally {
+				GDXDialogGate.release();
+			}
+		}, "gdx-dialog-mac").start();
     }
 
     private static String appleStr(String s) {
@@ -100,12 +118,20 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
     private void showSwing() {
         SwingUtilities.invokeLater(new Runnable() {
 
-            @Override
-            public void run() {
-                Gdx.app.debug(GDXDialogsVars.LOG_TAG,
-                        DesktopGDXTextPrompt.class.getSimpleName() + " now shown");
+			@Override
+			public void run() {
+				Gdx.app.debug(GDXDialogsVars.LOG_TAG,
+						DesktopGDXTextPrompt.class.getSimpleName() + " now shown");
+
+				if (!GDXDialogGate.tryClaim()) {
+					Gdx.app.debug(GDXDialogsVars.LOG_TAG,
+							DesktopGDXTextPrompt.class.getSimpleName() + " not shown: another dialog is already visible.");
+					return;
+				}
+				gateClaimed = true;
 
                 final JDialog dialog = new JDialog((java.awt.Frame) null, (String) title, false);
+                swingDialog = dialog;
                 dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
                 dialog.setLayout(new BorderLayout(8, 8));
 
@@ -135,6 +161,7 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
 
                 confirmBtn.addActionListener(e -> {
                     dialog.dispose();
+                    releaseGate();
                     if (listener != null) {
                         final String result;
                         switch (inputType) {
@@ -151,6 +178,7 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
 
                 cancelBtn.addActionListener(e -> {
                     dialog.dispose();
+                    releaseGate();
                     if (listener != null) {
                         Gdx.app.postRunnable(() -> listener.cancel());
                     }
@@ -163,6 +191,12 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
                 dialog.setMinimumSize(new Dimension(320, dialog.getHeight()));
                 dialog.setLocationRelativeTo(null);
                 dialog.setAlwaysOnTop(true);
+                dialog.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        releaseGate();
+                    }
+                });
                 dialog.setVisible(true);
             }
         });
@@ -225,8 +259,13 @@ public class DesktopGDXTextPrompt implements GDXTextPrompt {
 
     @Override
     public GDXTextPrompt dismiss() {
-        Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXTextPrompt.class.getSimpleName() + " dismiss " +
-                "ignored. (Desktop TextPrompt cannot be dismissed)");
+        SwingUtilities.invokeLater(() -> {
+            if (swingDialog != null) {
+                swingDialog.dispose();
+                releaseGate();
+                Gdx.app.debug(GDXDialogsVars.LOG_TAG, DesktopGDXTextPrompt.class.getSimpleName() + " dismissed.");
+            }
+        });
         return this;
     }
 

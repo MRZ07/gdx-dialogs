@@ -23,6 +23,7 @@ import android.content.DialogInterface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.listener.ButtonClickListener;
@@ -73,9 +74,20 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 			@Override
 			public void run() {
 				if (activity.isFinishing() || activity.isDestroyed()) return;
+				if (!GDXDialogGate.tryClaim()) {
+					Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
+							" not shown: another dialog is already visible.");
+					return;
+				}
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
 						" now shown.");
 				dialog = builder.create();
+				dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+					@Override
+					public void onDismiss(DialogInterface d) {
+						GDXDialogGate.release();
+					}
+				});
 				dialog.show();
 			}
 		});

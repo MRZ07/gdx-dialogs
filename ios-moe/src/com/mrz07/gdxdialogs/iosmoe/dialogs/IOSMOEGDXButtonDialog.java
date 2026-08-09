@@ -20,6 +20,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 
 import org.moe.natj.general.ann.NInt;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.listener.ButtonClickListener;
@@ -52,6 +53,11 @@ public class IOSMOEGDXButtonDialog implements GDXButtonDialog {
 			throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been built. Use build() " +
 					"before show().");
 		}
+		if (!GDXDialogGate.tryClaim()) {
+			Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSMOEGDXButtonDialog.class.getSimpleName() +
+					" not shown: another dialog is already visible.");
+			return this;
+		}
 		Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSMOEGDXButtonDialog.class.getSimpleName() + " now shown.");
 		Gdx.app.postRunnable(new Runnable() {
 			@Override
@@ -69,6 +75,7 @@ public class IOSMOEGDXButtonDialog implements GDXButtonDialog {
 					"before dismiss().");
 		}
 		Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSMOEGDXButtonDialog.class.getSimpleName() + " dismissed.");
+		GDXDialogGate.release();
 		alertView.dismissWithClickedButtonIndexAnimated(-1, false);
 		return this;
 	}
@@ -118,6 +125,7 @@ public class IOSMOEGDXButtonDialog implements GDXButtonDialog {
 		UIAlertViewDelegate delegate = new UIAlertViewDelegate() {
 			@Override
 			public void alertViewDidDismissWithButtonIndex (UIAlertView alertView, @NInt long buttonIndex) {
+				GDXDialogGate.release();
 				performClickOnButton(buttonIndex);
 			}
 		};

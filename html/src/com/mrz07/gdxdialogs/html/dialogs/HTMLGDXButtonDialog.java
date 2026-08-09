@@ -18,6 +18,7 @@ package com.mrz07.gdxdialogs.html.dialogs;
 
 import com.badlogic.gdx.utils.Array;
 
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.listener.ButtonClickListener;
 
@@ -40,6 +41,9 @@ public class HTMLGDXButtonDialog implements GDXButtonDialog {
         if (isBuild == false) {
             throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() before show().");
         }
+        if (!GDXDialogGate.tryClaim()) {
+            return this;
+        }
         showJSButtonDialog(toString());
         return this;
     }
@@ -50,6 +54,7 @@ public class HTMLGDXButtonDialog implements GDXButtonDialog {
             throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() before dismiss().");
         }
         dismissJSButtonDialog(toString());
+        GDXDialogGate.release();
         return this;
     }
 
@@ -134,6 +139,7 @@ public class HTMLGDXButtonDialog implements GDXButtonDialog {
             button1.value = label1;
             var button1Action = function() {
                 listener.@com.mrz07.gdxdialogs.core.listener.ButtonClickListener::click(I)(0);
+                @com.mrz07.gdxdialogs.core.GDXDialogGate::release()();
                 $doc.getElementById(id + "-background").style = "display:none;";
                 $doc.getElementById(id).style = "display:none;";
             }
@@ -157,6 +163,7 @@ public class HTMLGDXButtonDialog implements GDXButtonDialog {
             button2.value = label2;
             var button2Action = function() {
                 listener.@com.mrz07.gdxdialogs.core.listener.ButtonClickListener::click(I)(1);
+                @com.mrz07.gdxdialogs.core.GDXDialogGate::release()();
                 $doc.getElementById(id + "-background").style = "display:none;";
                 $doc.getElementById(id).style = "display:none;";
             }
@@ -176,6 +183,7 @@ public class HTMLGDXButtonDialog implements GDXButtonDialog {
             button3.value = label3;
             var button3Action = function() {
                 listener.@com.mrz07.gdxdialogs.core.listener.ButtonClickListener::click(I)(2);
+                @com.mrz07.gdxdialogs.core.GDXDialogGate::release()();
                 $doc.getElementById(id + "-background").style = "display:none;";
                 $doc.getElementById(id).style = "display:none;";
             }

@@ -16,6 +16,7 @@
 
 package com.mrz07.gdxdialogs.html.dialogs;
 
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -56,6 +57,9 @@ public class HTMLGDXTextPrompt implements GDXTextPrompt {
         if (!isBuild) {
             throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() before show().");
         }
+        if (!GDXDialogGate.tryClaim()) {
+            return this;
+        }
         showJSTextPrompt(toString());
         return this;
     }
@@ -66,6 +70,7 @@ public class HTMLGDXTextPrompt implements GDXTextPrompt {
             throw new RuntimeException(GDXButtonDialog.class.getSimpleName() + " has not been build. Use build() before dismiss().");
         }
         dismissJSTextPrompt(toString());
+        GDXDialogGate.release();
         return this;
     }
 
@@ -129,7 +134,7 @@ public class HTMLGDXTextPrompt implements GDXTextPrompt {
                 if (prompt.listener != null) {
                     prompt.listener.cancel();
                 }
-
+                GDXDialogGate.release();
             }
         }
     }
@@ -142,7 +147,7 @@ public class HTMLGDXTextPrompt implements GDXTextPrompt {
                 if (prompt.listener != null) {
                     prompt.listener.confirm(text);
                 }
-
+                GDXDialogGate.release();
             }
         }
     }
@@ -191,6 +196,7 @@ public class HTMLGDXTextPrompt implements GDXTextPrompt {
         cancelNode.value = cancel;
         var cancelAction = function() {
             listener.@com.mrz07.gdxdialogs.core.listener.TextPromptListener::cancel()();
+            @com.mrz07.gdxdialogs.core.GDXDialogGate::release()();
             $doc.getElementById(id + "-background").style = "display:none;";
             $doc.getElementById(id).style = "display:none;";
         }
@@ -209,6 +215,7 @@ public class HTMLGDXTextPrompt implements GDXTextPrompt {
         confirmNode.value = confirm;
         var confirmAction = function() {
             listener.@com.mrz07.gdxdialogs.core.listener.TextPromptListener::confirm(Ljava/lang/String;)($doc.getElementById(id + "-input").value);
+            @com.mrz07.gdxdialogs.core.GDXDialogGate::release()();
             $doc.getElementById(id + "-background").style = "display:none;";
             $doc.getElementById(id).style = "display:none;";
         }

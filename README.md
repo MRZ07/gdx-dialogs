@@ -38,6 +38,11 @@ libGDX extension providing cross-platform support for native dialogs.
 - All Swing calls moved to `SwingUtilities.invokeLater` for proper Event Dispatch Thread safety on modern JVMs
 - Test launcher added (`DesktopDialogTest`) to exercise all three dialog types without a full libGDX window
 
+### v2.1.0
+- **Single-dialog invariant (breaking-ish):** at most one native dialog is visible at any time. A second `show()` while a dialog is up is dropped instead of stacking. Implemented via a shared `GDXDialogGate` (core) claimed on `show()` and released on dismiss (Android `OnDismissListener`, desktop Swing `windowClosed`, macOS osascript `finally`, HTML JS dismiss actions, iOS `didDismiss`).
+- Desktop `ButtonDialog` and `TextPrompt` now support `dismiss()` (disposes the Swing dialog), releasing the gate; the macOS osascript variant remains non-dismissable.
+- Added `GDXDialogGateTest` (`./gradlew :desktop:runGateTest`) covering gate semantics and no-stacking with real Swing dialogs.
+
 ### v2.0.0 (breaking)
 - Removed all runtime reflection from gdx-dialogs
 - `GDXDialogsSystem.install()` is now explicit and requires a platform-specific `GDXDialogs` instance
@@ -80,13 +85,13 @@ Then add the dependencies you need:
 
 **Core** *(required by all platforms)*
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.0.0'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.1.0'
 
 ```
 
 **Android**
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.0.0'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.1.0'
 ```
 
 Copy the [`android/res`](android/res) folder from this project into your Android module and keep the directory structure.  
@@ -94,20 +99,20 @@ You may edit [`android/res/values-v11/styles.xml`](android/res/values-v11/styles
 
 **Desktop** *(Swing-based fallback, works on macOS + LWJGL3)*
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.0.0'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.1.0'
 ```
 
 **iOS (RoboVM)**
 
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-ios:2.0.0'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-ios:2.1.0'
 ```
 
 **HTML / GWT**
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.0.0'
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.0.0:sources'
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.0.0:sources'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.1.0'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.1.0:sources'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.1.0:sources'
 ```
 
 Add to your `GdxDefinition.gwt.xml`:

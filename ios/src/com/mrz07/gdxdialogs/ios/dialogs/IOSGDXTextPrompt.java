@@ -17,6 +17,7 @@
 package com.mrz07.gdxdialogs.ios.dialogs;
 
 import com.badlogic.gdx.Gdx;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -48,6 +49,11 @@ public class IOSGDXTextPrompt implements GDXTextPrompt {
         if (alertView == null) {
             throw new RuntimeException(GDXTextPrompt.class.getSimpleName() + " has not been build. Use build() before show().");
         }
+        if (!GDXDialogGate.tryClaim()) {
+            Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSGDXTextPrompt.class.getSimpleName() +
+                    " not shown: another dialog is already visible.");
+            return this;
+        }
         Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSGDXTextPrompt.class.getSimpleName() + " now shown.");
         alertView.show();
         return this;
@@ -64,6 +70,7 @@ public class IOSGDXTextPrompt implements GDXTextPrompt {
 
             @Override
             public void didDismiss(UIAlertView alertView, long buttonIndex) {
+                GDXDialogGate.release();
                 if (listener != null) {
                     if (buttonIndex == 0) {
                         Gdx.app.postRunnable(new Runnable() {
@@ -211,6 +218,7 @@ public class IOSGDXTextPrompt implements GDXTextPrompt {
             throw new RuntimeException(GDXTextPrompt.class.getSimpleName() + " has not been build. Use build() before dismiss().");
         }
         Gdx.app.debug(GDXDialogsVars.LOG_TAG, IOSGDXTextPrompt.class.getSimpleName() + " dismissed.");
+        GDXDialogGate.release();
         alertView.dismiss(0, false);
         return this;
     }

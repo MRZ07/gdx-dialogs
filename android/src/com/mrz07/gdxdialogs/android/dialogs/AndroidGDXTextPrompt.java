@@ -29,6 +29,7 @@ import android.widget.TextView;
 import com.badlogic.gdx.Gdx;
 
 import com.mrz07.gdxdialogs.android.R;
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -79,6 +80,11 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 			@Override
 			public void run() {
 				if (activity.isFinishing() || activity.isDestroyed()) return;
+				if (!GDXDialogGate.tryClaim()) {
+					Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() +
+							" not shown: another dialog is already visible.");
+					return;
+				}
 				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 				LayoutInflater li = LayoutInflater.from(activity);
 
@@ -122,6 +128,12 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 				});
 
 				alertDialog = alertDialogBuilder.create();
+				alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+					@Override
+					public void onDismiss(DialogInterface dialog) {
+						GDXDialogGate.release();
+					}
+				});
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() + " now shown.");
 				alertDialog.show();
 			}

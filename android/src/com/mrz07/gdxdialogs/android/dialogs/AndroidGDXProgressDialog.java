@@ -25,6 +25,7 @@ import android.widget.TextView;
 
 import com.badlogic.gdx.Gdx;
 
+import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
 
@@ -71,6 +72,11 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 			@Override
 			public void run() {
 				if (activity.isFinishing() || activity.isDestroyed()) return;
+				if (!GDXDialogGate.tryClaim()) {
+					Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXProgressDialog.class.getSimpleName() +
+							" not shown: another dialog is already visible.");
+					return;
+				}
 				AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 				builder.setTitle(title);
 				builder.setCancelable(cancelable);
@@ -95,6 +101,12 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 				}
 
 				progressDialog = builder.create();
+				progressDialog.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
+					@Override
+					public void onDismiss(android.content.DialogInterface dialog) {
+						GDXDialogGate.release();
+					}
+				});
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " now shown.");
 				progressDialog.show();
 			}

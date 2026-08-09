@@ -20,6 +20,9 @@ public class DesktopDialogTest {
 
         GDXDialogs dialogs = GDXDialogsSystem.install(new DesktopGDXDialogs());
 
+        // Only one native dialog may be visible at a time (GDXDialogGate). Each dialog
+        // is shown and dismissed before the next, otherwise the next show() is dropped.
+
         // 1. Button Dialog
         GDXButtonDialog buttonDialog = dialogs.newDialog(GDXButtonDialog.class);
         buttonDialog.setTitle("Button Dialog Test")
@@ -38,6 +41,8 @@ public class DesktopDialogTest {
 
         // Give Swing time to process (invokeLater is used inside show())
         Thread.sleep(200);
+        buttonDialog.dismiss();
+        Thread.sleep(200);
 
         // 2. Progress Dialog — shown for 2 seconds then dismissed
         GDXProgressDialog progressDialog = dialogs.newDialog(GDXProgressDialog.class);
@@ -48,6 +53,7 @@ public class DesktopDialogTest {
 
         Thread.sleep(2000);
         progressDialog.dismiss();
+        Thread.sleep(200);
 
         // 3. Text Prompt
         GDXTextPrompt textPrompt = dialogs.newDialog(GDXTextPrompt.class);
@@ -60,6 +66,7 @@ public class DesktopDialogTest {
 
         // Wait for Swing EDT to finish (invokeLater schedules async)
         Thread.sleep(300);
+        textPrompt.dismiss();
 
         // Keep JVM alive until all Swing dialogs are closed
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -75,7 +82,7 @@ public class DesktopDialogTest {
     }
 
     /** Minimal Application stub — only implements the methods used by desktop dialogs. */
-    private static class StubApplication implements Application {
+    static class StubApplication implements Application {
         @Override public void debug(String tag, String message) { System.out.println("[DEBUG] " + tag + ": " + message); }
         @Override public void debug(String tag, String message, Throwable exception) { debug(tag, message); exception.printStackTrace(); }
         @Override public void log(String tag, String message) { System.out.println("[LOG] " + tag + ": " + message); }
