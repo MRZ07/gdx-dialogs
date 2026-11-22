@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import com.badlogic.gdx.Gdx;
 
+import com.mrz07.gdxdialogs.android.AndroidDialogGate;
 import com.mrz07.gdxdialogs.android.R;
 import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
@@ -135,7 +136,12 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 					}
 				});
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() + " now shown.");
-				alertDialog.show();
+				AndroidDialogGate.show(activity, alertDialog, AndroidGDXTextPrompt.class.getSimpleName(), new Runnable() {
+					@Override
+					public void run() {
+						notifyCancel();
+					}
+				});
 			}
 		});
 
@@ -208,6 +214,17 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 				break;
 		}
 		return this;
+	}
+
+	/** Tells the caller the prompt will never appear, so no continuation waits on it. */
+	private void notifyCancel() {
+		if (listener == null || Gdx.app == null) return;
+		Gdx.app.postRunnable(new Runnable() {
+			@Override
+			public void run() {
+				listener.cancel();
+			}
+		});
 	}
 
 	@Override

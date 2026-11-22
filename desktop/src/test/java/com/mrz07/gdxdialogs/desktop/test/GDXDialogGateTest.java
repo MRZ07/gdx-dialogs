@@ -20,6 +20,7 @@ public class GDXDialogGateTest {
 
     public static void main(String[] args) throws Exception {
         testGateSemantics();
+        testGateRecoversAfterAFailedShow();
 
         if (GraphicsEnvironment.isHeadless()) {
             System.out.println("[GateTest] headless environment — skipping Swing integration checks.");
@@ -36,6 +37,19 @@ public class GDXDialogGateTest {
         GDXDialogGate.release();
         check(!GDXDialogGate.isClaimed(), "gate must be released after release()");
         check(GDXDialogGate.tryClaim(), "claim must succeed again after release");
+        GDXDialogGate.release();
+    }
+
+    /**
+     * A dialog that never attaches must not keep the gate, or every later dialog in the process
+     * would be dropped. Android releases the claim when a show is rejected; the release path is
+     * platform independent, so the contract is checked here.
+     */
+    private static void testGateRecoversAfterAFailedShow() {
+        check(GDXDialogGate.tryClaim(), "a show attempt claims the gate");
+        GDXDialogGate.release();
+        check(!GDXDialogGate.isClaimed(), "a rejected show must release the gate");
+        check(GDXDialogGate.tryClaim(), "the next dialog must be able to claim again");
         GDXDialogGate.release();
     }
 

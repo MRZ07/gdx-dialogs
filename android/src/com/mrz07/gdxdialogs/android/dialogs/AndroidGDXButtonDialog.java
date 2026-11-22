@@ -23,6 +23,7 @@ import android.content.DialogInterface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 
+import com.mrz07.gdxdialogs.android.AndroidDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
@@ -88,11 +89,27 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 						GDXDialogGate.release();
 					}
 				});
-				dialog.show();
+				AndroidDialogGate.show(activity, dialog, AndroidGDXButtonDialog.class.getSimpleName(), new Runnable() {
+					@Override
+					public void run() {
+						notifyCancel();
+					}
+				});
 			}
 		});
 
 		return this;
+	}
+
+	/** Tells the caller the dialog will never appear, so no continuation waits on it. */
+	private void notifyCancel() {
+		if (listener == null || Gdx.app == null) return;
+		Gdx.app.postRunnable(new Runnable() {
+			@Override
+			public void run() {
+				listener.click(-1);
+			}
+		});
 	}
 
 	@Override

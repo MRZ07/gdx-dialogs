@@ -25,6 +25,7 @@ import android.widget.TextView;
 
 import com.badlogic.gdx.Gdx;
 
+import com.mrz07.gdxdialogs.android.AndroidDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
@@ -108,7 +109,7 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 					}
 				});
 				Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " now shown.");
-				progressDialog.show();
+				AndroidDialogGate.show(activity, progressDialog, AndroidGDXProgressDialog.class.getSimpleName(), null);
 			}
 		});
 
