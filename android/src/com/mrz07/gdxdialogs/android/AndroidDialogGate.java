@@ -51,18 +51,63 @@ public final class AndroidDialogGate {
 			dialog.show();
 			return true;
 		} catch (RuntimeException failure) {
-			return drop(owner, "window token rejected", failure, onFailure);
+			return drop(owner, "(" + failure.getClass().getSimpleName() + "): " + failure.getMessage(), failure,
+					onFailure);
 		}
+	}
+
+	/** Creates, configures and shows a dialog under a single gate claim. */
+	public static Dialog showClaimed(final Activity activity, final String owner, final DialogCreator creator,
+			final Runnable onFailure) {
+		boolean hostAvailable = activity != null && !activity.isFinishing() && !activity.isDestroyed();
+		Dialog dialog = GDXDialogGate.runClaimed(hostAvailable, new GDXDialogGate.DialogCreator<Dialog>() {
+			@Override
+			public Dialog create() {
+				return creator.create();
+			}
+		}, new GDXDialogGate.DialogShower<Dialog>() {
+			@Override
+			public void show(Dialog createdDialog) {
+				createdDialog.setOnDismissListener(d -> GDXDialogGate.release());
+				createdDialog.show();
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				debug(owner + " not shown: another dialog is already visible.");
+			}
+		}, new GDXDialogGate.DialogFailureHandler() {
+			@Override
+			public void onFailure(RuntimeException failure) {
+				if (failure == null) {
+					logError(owner + " not shown: activity is gone", null);
+				} else {
+					logError(owner + " not shown (" + failure.getClass().getSimpleName() + "): " +
+							failure.getMessage(), failure);
+				}
+				if (onFailure != null) onFailure.run();
+			}
+		});
+		if (dialog != null) debug(owner + " now shown.");
+		return dialog;
 	}
 
 	private static boolean drop(String owner, String reason, RuntimeException failure, Runnable onFailure) {
 		GDXDialogGate.release();
-		if (Gdx.app != null) {
-			Gdx.app.error(GDXDialogsVars.LOG_TAG, owner + " not shown: " + reason, failure);
-		}
-		if (onFailure != null) {
-			onFailure.run();
-		}
+		logError(owner + " not shown: " + reason, failure);
+		if (onFailure != null) onFailure.run();
 		return false;
+	}
+
+	private static void logError(String message, RuntimeException failure) {
+		if (Gdx.app != null) Gdx.app.error(GDXDialogsVars.LOG_TAG, message, failure);
+	}
+
+	private static void debug(String message) {
+		if (Gdx.app != null) Gdx.app.debug(GDXDialogsVars.LOG_TAG, message);
+	}
+
+	public interface DialogCreator {
+		Dialog create();
 	}
 }

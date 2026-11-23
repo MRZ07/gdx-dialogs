@@ -24,9 +24,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 
 import com.mrz07.gdxdialogs.android.AndroidDialogGate;
-import com.mrz07.gdxdialogs.core.GDXDialogGate;
-import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXButtonDialog;
+import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.listener.ButtonClickListener;
 
 public class AndroidGDXButtonDialog implements GDXButtonDialog {
@@ -71,32 +70,26 @@ public class AndroidGDXButtonDialog implements GDXButtonDialog {
 		// (which holds the DefaultAndroidInput lock). Blocking in build() while
 		// that lock is held causes a deadlock/ANR when the main thread tries to
 		// dispatch a key event through onKey() at the same time.
-		activity.runOnUiThread(new Runnable() {
+		Runnable showDialog = new Runnable() {
 			@Override
 			public void run() {
-				if (activity.isFinishing() || activity.isDestroyed()) return;
-				if (!GDXDialogGate.tryClaim()) {
-					Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
-							" not shown: another dialog is already visible.");
-					return;
-				}
-				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXButtonDialog.class.getSimpleName() +
-						" now shown.");
-				dialog = builder.create();
-				dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-					@Override
-					public void onDismiss(DialogInterface d) {
-						GDXDialogGate.release();
-					}
-				});
-				AndroidDialogGate.show(activity, dialog, AndroidGDXButtonDialog.class.getSimpleName(), new Runnable() {
+				AlertDialog shownDialog = (AlertDialog) AndroidDialogGate.showClaimed(activity,
+						AndroidGDXButtonDialog.class.getSimpleName(), new AndroidDialogGate.DialogCreator() {
+							@Override
+							public android.app.Dialog create() {
+								return builder.create();
+							}
+						}, new Runnable() {
 					@Override
 					public void run() {
 						notifyCancel();
-					}
+						}
 				});
+				if (shownDialog != null) dialog = shownDialog;
 			}
-		});
+		};
+		if (activity == null) showDialog.run();
+		else activity.runOnUiThread(showDialog);
 
 		return this;
 	}

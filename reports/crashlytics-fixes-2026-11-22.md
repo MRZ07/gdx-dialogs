@@ -65,3 +65,12 @@ covered by the desktop test, and the Activity check is a straight guard on
   now sees no dialog to dismiss, so this is a no-op rather than a hang.
 - Only the Android backend is guarded. The desktop, iOS and HTML backends release
   the gate through their own dismiss paths and were not changed.
+
+## v2.1.2 addendum
+
+The Android helper now owns gate claim, dialog creation, dismiss-listener setup,
+and show as one lifecycle, so failures during construction cannot strand the
+gate. Finishing/destroyed Activity exits notify button/text-prompt cancellation,
+and the dialog instances are stored only after a successful show. The desktop
+gate test exercises unavailable-host, creation-failure, show-failure, and
+recovery paths through the shared pure-Java lifecycle helper.

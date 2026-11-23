@@ -26,7 +26,6 @@ import android.widget.TextView;
 import com.badlogic.gdx.Gdx;
 
 import com.mrz07.gdxdialogs.android.AndroidDialogGate;
-import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXProgressDialog;
 
@@ -69,49 +68,43 @@ public class AndroidGDXProgressDialog implements GDXProgressDialog {
 		// Doing this in build() required blocking the calling thread (Thread.sleep)
 		// which causes a deadlock/ANR when build() is called from the GL thread
 		// while it holds the DefaultAndroidInput lock.
-		activity.runOnUiThread(new Runnable() {
+		Runnable showDialog = new Runnable() {
 			@Override
 			public void run() {
-				if (activity.isFinishing() || activity.isDestroyed()) return;
-				if (!GDXDialogGate.tryClaim()) {
-					Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXProgressDialog.class.getSimpleName() +
-							" not shown: another dialog is already visible.");
-					return;
-				}
-				AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-				builder.setTitle(title);
-				builder.setCancelable(cancelable);
+				AlertDialog shownDialog = (AlertDialog) AndroidDialogGate.showClaimed(activity,
+						AndroidGDXProgressDialog.class.getSimpleName(), new AndroidDialogGate.DialogCreator() {
+							@Override
+							public android.app.Dialog create() {
+								AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+								builder.setTitle(title);
+								builder.setCancelable(cancelable);
 
-				ProgressBar progressBar = new ProgressBar(activity);
-				progressBar.setIndeterminate(true);
-				int padding = (int) (16 * activity.getResources().getDisplayMetrics().density);
-				progressBar.setPadding(padding, padding, padding, padding);
+								ProgressBar progressBar = new ProgressBar(activity);
+								progressBar.setIndeterminate(true);
+								int padding = (int) (16 * activity.getResources().getDisplayMetrics().density);
+								progressBar.setPadding(padding, padding, padding, padding);
 
-				if (message != null && message.length() > 0) {
-					android.widget.LinearLayout layout = new android.widget.LinearLayout(activity);
-					layout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
-					layout.setPadding(padding, padding, padding, padding);
-					layout.addView(progressBar);
-					TextView messageView = new TextView(activity);
-					messageView.setText(message);
-					messageView.setPadding(padding, 0, 0, 0);
-					layout.addView(messageView);
-					builder.setView(layout);
-				} else {
-					builder.setView(progressBar);
-				}
-
-				progressDialog = builder.create();
-				progressDialog.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
-					@Override
-					public void onDismiss(android.content.DialogInterface dialog) {
-						GDXDialogGate.release();
-					}
-				});
-				Gdx.app.debug(GDXDialogsVars.LOG_TAG, GDXProgressDialog.class.getSimpleName() + " now shown.");
-				AndroidDialogGate.show(activity, progressDialog, AndroidGDXProgressDialog.class.getSimpleName(), null);
+								if (message != null && message.length() > 0) {
+									android.widget.LinearLayout layout = new android.widget.LinearLayout(activity);
+									layout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+									layout.setPadding(padding, padding, padding, padding);
+									layout.addView(progressBar);
+									TextView messageView = new TextView(activity);
+									messageView.setText(message);
+									messageView.setPadding(padding, 0, 0, 0);
+									layout.addView(messageView);
+									builder.setView(layout);
+								} else {
+									builder.setView(progressBar);
+								}
+								return builder.create();
+							}
+						}, null);
+				if (shownDialog != null) progressDialog = shownDialog;
 			}
-		});
+		};
+		if (activity == null) showDialog.run();
+		else activity.runOnUiThread(showDialog);
 
 		return this;
 	}

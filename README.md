@@ -23,7 +23,7 @@ libGDX extension providing cross-platform support for native dialogs.
 - Versions centralised in `gradle.properties` (`gdxVersion`, `roboVMVersion`)
 - `ios-moe` module removed (Multi-OS Engine is abandoned)
 - `configure(subprojects - project(':android'))` pattern adopted from the official libGDX template
-- Java source/target compatibility raised from **1.7 → 11**
+- Java source/target compatibility set to **1.8** across modules for RoboVM and platform compatibility
 
 ### Android
 - `compileSdkVersion 23` / `targetSdkVersion 23` → **compileSdk 35 / targetSdk 35**
@@ -37,6 +37,11 @@ libGDX extension providing cross-platform support for native dialogs.
 ### Desktop (Swing/LWJGL-less fallback)
 - All Swing calls moved to `SwingUtilities.invokeLater` for proper Event Dispatch Thread safety on modern JVMs
 - Test launcher added (`DesktopDialogTest`) to exercise all three dialog types without a full libGDX window
+
+### v2.1.2
+- **Android dialog lifecycle is handled as one gated operation.** Dialog construction failures now release the shared gate just like show failures, and finishing or destroyed Activities trigger the prompt/button cancellation callbacks instead of silently returning.
+- **Unshown dialogs are not retained.** Dialog fields are assigned only when the dialog has successfully been shown; failures are logged with their actual exception type and message.
+- **Lifecycle failure tests exercise the helper directly.** The gate test now covers unavailable hosts, creation/show exceptions, release, and a subsequent successful dialog.
 
 ### v2.1.1
 - **Android: a rejected window token no longer crashes the app.** `show()` is routed through `AndroidDialogGate`, which catches `WindowManager.BadTokenException` (and any other `RuntimeException` from the window manager), releases `GDXDialogGate`, and logs instead of throwing on the UI thread.
@@ -90,13 +95,13 @@ Then add the dependencies you need:
 
 **Core** *(required by all platforms)*
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.1.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.1.2'
 
 ```
 
 **Android**
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.1.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-android:2.1.2'
 ```
 
 Copy the [`android/res`](android/res) folder from this project into your Android module and keep the directory structure.  
@@ -104,20 +109,20 @@ You may edit [`android/res/values-v11/styles.xml`](android/res/values-v11/styles
 
 **Desktop** *(Swing-based fallback, works on macOS + LWJGL3)*
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.1.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-desktop:2.1.2'
 ```
 
 **iOS (RoboVM)**
 
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-ios:2.1.1'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-ios:2.1.2'
 ```
 
 **HTML / GWT**
 ```gradle
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.1.1'
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.1.1:sources'
-implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.1.1:sources'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.1.2'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-core:2.1.2:sources'
+implementation 'com.github.MRZ07.gdx-dialogs:gdx-dialogs-html:2.1.2:sources'
 ```
 
 Add to your `GdxDefinition.gwt.xml`:

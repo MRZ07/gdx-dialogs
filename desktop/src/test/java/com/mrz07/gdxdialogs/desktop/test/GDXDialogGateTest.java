@@ -20,7 +20,7 @@ public class GDXDialogGateTest {
 
     public static void main(String[] args) throws Exception {
         testGateSemantics();
-        testGateRecoversAfterAFailedShow();
+        testGateRecoversAfterLifecycleFailures();
 
         if (GraphicsEnvironment.isHeadless()) {
             System.out.println("[GateTest] headless environment — skipping Swing integration checks.");
@@ -45,11 +45,50 @@ public class GDXDialogGateTest {
      * would be dropped. Android releases the claim when a show is rejected; the release path is
      * platform independent, so the contract is checked here.
      */
-    private static void testGateRecoversAfterAFailedShow() {
-        check(GDXDialogGate.tryClaim(), "a show attempt claims the gate");
-        GDXDialogGate.release();
-        check(!GDXDialogGate.isClaimed(), "a rejected show must release the gate");
-        check(GDXDialogGate.tryClaim(), "the next dialog must be able to claim again");
+    private static void testGateRecoversAfterLifecycleFailures() {
+        final boolean[] failureNotified = {false};
+        Object unavailable = GDXDialogGate.runClaimed(false, () -> {
+            throw new AssertionError("unavailable host must not create a dialog");
+        }, dialog -> {
+            throw new AssertionError("unavailable host must not show a dialog");
+        }, null, failure -> {
+            check(failure == null, "unavailable host reports no runtime exception");
+            failureNotified[0] = true;
+        });
+        check(unavailable == null, "unavailable host returns no dialog");
+        check(failureNotified[0], "unavailable host invokes onFailure");
+        check(!GDXDialogGate.isClaimed(), "unavailable host does not claim the gate");
+
+        final RuntimeException creationFailure = new IllegalStateException("create failed");
+        failureNotified[0] = false;
+        Object creationResult = GDXDialogGate.runClaimed(true, () -> {
+            throw creationFailure;
+        }, dialog -> {
+            throw new AssertionError("failed creation must not show a dialog");
+        }, null, failure -> {
+            check(failure == creationFailure, "creation failure is reported to onFailure");
+            failureNotified[0] = true;
+        });
+        check(creationResult == null, "creation failure returns no dialog");
+        check(failureNotified[0], "creation failure invokes onFailure");
+        check(!GDXDialogGate.isClaimed(), "creation failure releases the gate");
+
+        final RuntimeException showFailure = new IllegalArgumentException("show failed");
+        failureNotified[0] = false;
+        Object showResult = GDXDialogGate.runClaimed(true, Object::new, dialog -> {
+            throw showFailure;
+        }, null, failure -> {
+            check(failure == showFailure, "show failure is reported to onFailure");
+            failureNotified[0] = true;
+        });
+        check(showResult == null, "show failure returns no dialog");
+        check(failureNotified[0], "show failure invokes onFailure");
+        check(!GDXDialogGate.isClaimed(), "show failure releases the gate");
+
+        Object shown = new Object();
+        Object subsequent = GDXDialogGate.runClaimed(true, () -> shown, dialog -> { }, null, null);
+        check(subsequent == shown, "a later dialog can claim and show after failures");
+        check(GDXDialogGate.isClaimed(), "successful show retains the claim until dismiss");
         GDXDialogGate.release();
     }
 

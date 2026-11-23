@@ -51,4 +51,43 @@ public final class GDXDialogGate {
 	public static boolean isClaimed() {
 		return visible.get();
 	}
+
+	/**
+	 * Runs a dialog creation and show operation while owning the gate lifecycle.
+	 * The failure handler receives {@code null} when the host is unavailable, or
+	 * the runtime exception thrown while creating or showing the dialog.
+	 */
+	public static <T> T runClaimed(boolean hostAvailable, DialogCreator<T> creator, DialogShower<T> shower,
+			Runnable onAlreadyClaimed, DialogFailureHandler onFailure) {
+		if (!hostAvailable) {
+			if (onFailure != null) onFailure.onFailure(null);
+			return null;
+		}
+		if (!tryClaim()) {
+			if (onAlreadyClaimed != null) onAlreadyClaimed.run();
+			return null;
+		}
+
+		try {
+			T dialog = creator.create();
+			shower.show(dialog);
+			return dialog;
+		} catch (RuntimeException failure) {
+			release();
+			if (onFailure != null) onFailure.onFailure(failure);
+			return null;
+		}
+	}
+
+	public interface DialogCreator<T> {
+		T create();
+	}
+
+	public interface DialogShower<T> {
+		void show(T dialog);
+	}
+
+	public interface DialogFailureHandler {
+		void onFailure(RuntimeException failure);
+	}
 }

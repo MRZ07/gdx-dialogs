@@ -30,7 +30,6 @@ import com.badlogic.gdx.Gdx;
 
 import com.mrz07.gdxdialogs.android.AndroidDialogGate;
 import com.mrz07.gdxdialogs.android.R;
-import com.mrz07.gdxdialogs.core.GDXDialogGate;
 import com.mrz07.gdxdialogs.core.GDXDialogsVars;
 import com.mrz07.gdxdialogs.core.dialogs.GDXTextPrompt;
 import com.mrz07.gdxdialogs.core.listener.TextPromptListener;
@@ -77,73 +76,66 @@ public class AndroidGDXTextPrompt implements GDXTextPrompt {
 		// thread, together with show(). Doing this in build() required blocking the
 		// calling thread (Thread.sleep) which causes a deadlock/ANR when build() is
 		// called from the GL thread while it holds the DefaultAndroidInput lock.
-		activity.runOnUiThread(new Runnable() {
+		Runnable showDialog = new Runnable() {
 			@Override
 			public void run() {
-				if (activity.isFinishing() || activity.isDestroyed()) return;
-				if (!GDXDialogGate.tryClaim()) {
-					Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() +
-							" not shown: another dialog is already visible.");
-					return;
-				}
-				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
-				LayoutInflater li = LayoutInflater.from(activity);
+				AlertDialog shownDialog = (AlertDialog) AndroidDialogGate.showClaimed(activity,
+						AndroidGDXTextPrompt.class.getSimpleName(), new AndroidDialogGate.DialogCreator() {
+							@Override
+							public android.app.Dialog create() {
+								AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
+								LayoutInflater li = LayoutInflater.from(activity);
+								View promptsView = li.inflate(R.layout.gdxdialogs_inputtext, null);
+								alertDialogBuilder.setView(promptsView);
 
-				View promptsView = li.inflate(R.layout.gdxdialogs_inputtext, null);
-				alertDialogBuilder.setView(promptsView);
+								userInput = (EditText) promptsView.findViewById(R.id.gdxDialogsEditTextInput);
+								userInput.setFilters(new InputFilter[] {new InputFilter.LengthFilter(maxLength)});
+								userInput.setInputType(inputType);
+								userInput.setText(inputValue);
 
-				userInput = (EditText) promptsView.findViewById(R.id.gdxDialogsEditTextInput);
-				userInput.setFilters(new InputFilter[] {new InputFilter.LengthFilter(maxLength)});
-				userInput.setInputType(inputType);
-				userInput.setText(inputValue);
+								titleView = (TextView) promptsView.findViewById(R.id.gdxDialogsEnterTitle);
+								messageView = (TextView) promptsView.findViewById(R.id.gdxDialogsEnterMessage);
+								titleView.setText(title);
+								messageView.setText(message);
 
-				titleView = (TextView) promptsView.findViewById(R.id.gdxDialogsEnterTitle);
-				messageView = (TextView) promptsView.findViewById(R.id.gdxDialogsEnterMessage);
-				titleView.setText(title);
-				messageView.setText(message);
-
-				alertDialogBuilder.setCancelable(false).setPositiveButton(confirmLabel, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						final String result = userInput.getText().toString();
-						if (listener != null) {
-							Gdx.app.postRunnable(new Runnable() {
-								@Override
-								public void run() {
-									listener.confirm(result);
-								}
-							});
-						}
-					}
-				}).setNegativeButton(cancelLabel, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-						if (listener != null) {
-							Gdx.app.postRunnable(new Runnable() {
-								@Override
-								public void run() {
-									listener.cancel();
-								}
-							});
-						}
-					}
-				});
-
-				alertDialog = alertDialogBuilder.create();
-				alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-					@Override
-					public void onDismiss(DialogInterface dialog) {
-						GDXDialogGate.release();
-					}
-				});
-				Gdx.app.debug(GDXDialogsVars.LOG_TAG, AndroidGDXTextPrompt.class.getSimpleName() + " now shown.");
-				AndroidDialogGate.show(activity, alertDialog, AndroidGDXTextPrompt.class.getSimpleName(), new Runnable() {
+								alertDialogBuilder.setCancelable(false).setPositiveButton(confirmLabel, new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog, int id) {
+										final String result = userInput.getText().toString();
+										if (listener != null) {
+											Gdx.app.postRunnable(new Runnable() {
+												@Override
+												public void run() {
+													listener.confirm(result);
+												}
+											});
+										}
+									}
+								}).setNegativeButton(cancelLabel, new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog, int id) {
+										dialog.cancel();
+										if (listener != null) {
+											Gdx.app.postRunnable(new Runnable() {
+												@Override
+												public void run() {
+													listener.cancel();
+												}
+											});
+										}
+									}
+								});
+								return alertDialogBuilder.create();
+							}
+						}, new Runnable() {
 					@Override
 					public void run() {
 						notifyCancel();
 					}
 				});
+				if (shownDialog != null) alertDialog = shownDialog;
 			}
-		});
+		};
+		if (activity == null) showDialog.run();
+		else activity.runOnUiThread(showDialog);
 
 		return this;
 	}
